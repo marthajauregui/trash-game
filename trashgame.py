@@ -14,42 +14,6 @@ class Backdrop(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
 
 
-# class Character(pygame.sprite.Sprite):
-#     """Main character for our demo"""
-#     def __init__(self, input_dict):
-#         super().__init__()
-
-#         self.input = input_dict
-
-#         self.images = {}
-#         self.images["right"] = pygame.image.load(
-#             "assets/character.png"
-#         )
-#         self.images["left"] = pygame.transform.flip(
-#             self.images["right"], True, False
-#         )
-
-#         self.image = self.images["right"]
-
-#         self.rect = self.image.get_rect()
-
-#         self.x, self.y = 0, 0
-#         self.vx, self.vy = 0, 0
-#         self.ax, self.ay = 0, 0
-
-#         self.a = 2.4
-#         self.drag = 0.22
-#         self.min_vel = 0.2
-#         self.max_vel = 12.0
-
-#         self.set_pos(self.x, self.y)
-    
-
-    # def update(self):
-    #     """Updates character sprite"""
-    #     self.handle_input()
-
-
 class Game():
     def __init__(self):
         pygame.init()
@@ -69,12 +33,8 @@ class Game():
 
         self.backdrop = Backdrop()
 
-        # self.character = Character(self.input)
-        # self.character.set_pos(-80, HEIGHT / 2)
-
         self.sprites = pygame.sprite.Group()
         self.sprites.add(self.backdrop)
-        # self.sprites.add(self.character)
 
 
     def update(self):
