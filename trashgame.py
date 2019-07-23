@@ -7,12 +7,17 @@ from constants import *
 
 class Backdrop(pygame.sprite.Sprite):
     """An object that holds the background of the scene"""
-    def __init__(self):
+    def __init__(self, backdrop_type):
         super().__init__()
 
-        self.image = pygame.image.load("assets/sky.jpg")
+        self.images = {}
+        self.images[SKY_BACKGROUND] = pygame.image.load("assets/sky.jpg")
+        # self.images[] = pygame.image.load("assets/")  
+        
+        self.image = self.images[backdrop_type]
 
         self.rect = self.image.get_rect()
+
 
 class Button(pygame.sprite.Sprite):
     """The buttons that control the game"""
@@ -164,10 +169,10 @@ class Game():
             "right": False,
         }
 
-        self.backdrop = Backdrop()
+        self.sky_backdrop = Backdrop(SKY_BACKGROUND)
 
-        self.sprites = pygame.sprite.Group()
-        self.sprites.add(self.backdrop)
+        self.play_backgrounds = pygame.sprite.Group()
+        self.play_backgrounds.add(self.sky_backdrop)
 
         self.recycling_bin = RecyclingBin(self.input)
         self.recycling_bin.set_pos(WIDTH / 2, HEIGHT - 96)
@@ -200,18 +205,21 @@ class Game():
 
         if self.game_section == PLAY:
             self.update_trash()
-            self.draw()
+            self.draw_play_screen()
         elif self.game_section == START:
             self.start_buttons.update()
             self.start_buttons.draw(self.screen)
+        elif self.game_section == HOW_TO:
+            pass
 
         pygame.display.flip()
 
 
 
-    def draw(self):
-        self.sprites.update()
-        self.sprites.draw(self.screen)
+    def draw_play_screen(self):
+        """presents the play screen"""
+        self.play_backgrounds.update()
+        self.play_backgrounds.draw(self.screen)
 
         self.trash_items.update()
         self.trash_items.draw(self.screen)
@@ -271,8 +279,10 @@ class Game():
 
                 for button in self.start_buttons:
                     if button.rect.collidepoint(pos):
-                        print(button.button_type)
-
+                        if button.button_type == START_BUTTON:
+                            self.game_section = PLAY
+                        elif button.button_type == HOW_TO_PLAY_BUTTON:
+                            self.game_section == HOW_TO
 
 def main():
     """Main entry point for script"""
