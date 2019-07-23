@@ -4,6 +4,8 @@ from constants import *
 
 # increase speed of trash creation
 
+score = 0;
+
 
 class Backdrop(pygame.sprite.Sprite):
     """An object that holds the background of the scene"""
@@ -17,6 +19,7 @@ class Backdrop(pygame.sprite.Sprite):
         self.image = self.images[backdrop_type]
 
         self.rect = self.image.get_rect()
+
 
 
 class Button(pygame.sprite.Sprite):
@@ -138,9 +141,14 @@ class Trash(pygame.sprite.Sprite):
             self.kill()
 
 
+
 class Game():
+    """controls the actual game"""
     def __init__(self):
         pygame.init()
+        
+
+        
 
         self.trash_types = [
             "banana_peel", "boot", "broken_egg", "broken_bottle", "carboard_box", 
@@ -160,7 +168,7 @@ class Game():
         self.time_limit = 50
 
         self.difficulty_timer = 0
-        self.difficulty_time_limit = 70
+        self.difficulty_time_limit = 240
 
         self.input = {
             "up": False,
@@ -170,6 +178,7 @@ class Game():
         }
 
         self.sky_backdrop = Backdrop(SKY_BACKGROUND)
+       
 
         self.play_backgrounds = pygame.sprite.Group()
         self.play_backgrounds.add(self.sky_backdrop)
@@ -195,9 +204,6 @@ class Game():
 
         self.game_section = START
 
-
-
-
     def update(self):
         """Updates the game"""
         self.clock.tick(FPS)
@@ -214,8 +220,6 @@ class Game():
 
         pygame.display.flip()
 
-
-
     def draw_play_screen(self):
         """presents the play screen"""
         self.play_backgrounds.update()
@@ -226,15 +230,25 @@ class Game():
 
         self.players.update()
         self.players.draw(self.screen)
-
-
+        size = width, height = 800,500
+        
+        myfont = pygame.font.SysFont("monospace", 16)
+        scoretext = myfont.render("Score = "+ str(score), 1, (0,0,0))
+        self.screen.blit(scoretext, (5, 10))
+    
+    def texts(self, score, screen):
+            font=pygame.font.Font(None,30)
+            scoretext=font.render("Score:"+str(score), 1,(255,255,255))
+            screen.blit(scoretext, (500, 457))
 
     def update_trash(self):
-        if self.difficulty_timer >= self.difficulty_time_limit:
-            self.difficulty_timer = 0
-            self.time_limit -= 5
-        else:
-            self.difficulty_timer += 1
+        
+        if self.time_limit > 20:
+            if self.difficulty_timer >= self.difficulty_time_limit:
+                self.difficulty_timer = 0
+                self.time_limit -= 2
+            else:
+                self.difficulty_timer += 1
 
         if self.timer >= self.time_limit:
             self.timer = 0
@@ -249,12 +263,8 @@ class Game():
             if trash_item.rect.colliderect(self.recycling_bin.collision_rect):
                 self.score += 10
                 trash_item.kill()
+               
                 print(self.score)
-
-
-
-        
-
         
     def handle_input(self):
         """Updates the input dictionary"""
@@ -284,13 +294,14 @@ class Game():
                         elif button.button_type == HOW_TO_PLAY_BUTTON:
                             self.game_section == HOW_TO
 
+
 def main():
     """Main entry point for script"""
     game = Game()
 
     while game.running:
         game.update()
-
+       
 
 if __name__ == '__main__':
     main()
