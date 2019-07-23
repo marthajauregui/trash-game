@@ -1,8 +1,6 @@
 import pygame
 import random
-
-FPS = 30
-WIDTH, HEIGHT = 800, 600
+from constants import *
 
 # increase speed of trash creation
 
@@ -15,6 +13,30 @@ class Backdrop(pygame.sprite.Sprite):
         self.image = pygame.image.load("assets/sky.jpg")
 
         self.rect = self.image.get_rect()
+
+class Button(pygame.sprite.Sprite):
+    """The buttons that control the game"""
+    def __init__(self, button_type):
+        super().__init__()
+
+        self.button_type = button_type
+        
+        self.images = {}
+        self.images[START_BUTTON] = pygame.image.load("assets/start_button.png")
+        self.images[HOW_TO_PLAY_BUTTON] = pygame.image.load("assets/how_to_play_button.png")  
+        
+        self.image = self.images[button_type]
+
+        self.rect = self.image.get_rect()
+
+
+    def set_pos(self, x, y):
+        self.x = x
+        self.y = y
+        self.rect.x = self.x - self.rect.w / 2
+        self.rect.y = self.y - self.rect.h / 2
+         
+       
 
 
 class RecyclingBin(pygame.sprite.Sprite):
@@ -71,7 +93,7 @@ class Trash(pygame.sprite.Sprite):
             "envelope_2", "foil", "milk_carton", "orange_juice", "plastic_bottle", 
             "rotten_apple", "soda_can", "spilled_water", "trash_bag", "tuna_can"
         ]
-
+ 
         self.images = {}
         self.images["banana_peel"] = pygame.image.load("assets/banana_peel.png")
         self.images["boot"] = pygame.image.load("assets/boot.png")
@@ -130,7 +152,10 @@ class Game():
         self.running = True
 
         self.timer = 0
-        self.time_limit = 20
+        self.time_limit = 50
+
+        self.difficulty_timer = 0
+        self.difficulty_time_limit = 70
 
         self.input = {
             "up": False,
@@ -152,15 +177,36 @@ class Game():
 
         self.trash_items = pygame.sprite.Group()
 
+        self.start_button = Button(START_BUTTON)
+        self.start_button.set_pos(WIDTH/2, HEIGHT/2)
+
+        self.how_to_play_button = Button(HOW_TO_PLAY_BUTTON)
+        self.how_to_play_button.set_pos(WIDTH/2, HEIGHT/2 + 120)
+        
+        self.start_buttons = pygame.sprite.Group()
+        self.start_buttons.add(self.start_button)
+
+        self.start_buttons.add(self.how_to_play_button)
+
+        self.game_section = START
+
+
+
 
     def update(self):
         """Updates the game"""
         self.clock.tick(FPS)
-
         self.handle_input()
-        self.update_trash()
 
-        self.draw()
+        if self.game_section == PLAY:
+            self.update_trash()
+            self.draw()
+        elif self.game_section == START:
+            self.start_buttons.update()
+            self.start_buttons.draw(self.screen)
+
+        pygame.display.flip()
+
 
 
     def draw(self):
@@ -173,10 +219,15 @@ class Game():
         self.players.update()
         self.players.draw(self.screen)
 
-        pygame.display.flip()
 
 
     def update_trash(self):
+        if self.difficulty_timer >= self.difficulty_time_limit:
+            self.difficulty_timer = 0
+            self.time_limit -= 5
+        else:
+            self.difficulty_timer += 1
+
         if self.timer >= self.time_limit:
             self.timer = 0
             trash_piece = Trash(random.choice(self.trash_types))
@@ -214,6 +265,13 @@ class Game():
                     self.input["left"] = False
                 elif event.key == pygame.K_d:
                     self.input["right"] = False
+
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                pos = pygame.mouse.get_pos()
+
+                for button in self.start_buttons:
+                    if button.rect.collidepoint(pos):
+                        print(button.button_type)
 
 
 def main():
