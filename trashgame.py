@@ -2,10 +2,9 @@ import pygame
 import random
 from constants import *
 
-# increase speed of trash creation
-
-score = 0;
-
+# 2 modes
+# if good trash falls then deduct 5 points
+# start backdrop
 
 class Backdrop(pygame.sprite.Sprite):
     """An object that holds the background of the scene"""
@@ -14,12 +13,12 @@ class Backdrop(pygame.sprite.Sprite):
 
         self.images = {}
         self.images[SKY_BACKGROUND] = pygame.image.load("assets/sky.jpg")
-        # self.images[] = pygame.image.load("assets/")  
-        
+        self.images[BACKDROP] = pygame.image.load("assets/backdrop.png")
+        self.images[HOW_TO_PLAY_BACKGROUND] = pygame.image.load("assets/how_to_play_background.png")
+
         self.image = self.images[backdrop_type]
 
         self.rect = self.image.get_rect()
-
 
 
 class Button(pygame.sprite.Sprite):
@@ -58,8 +57,10 @@ class RecyclingBin(pygame.sprite.Sprite):
 
         self.rect = self.image.get_rect()
         self.collision_rect = self.image.get_rect()
-        self.collision_rect.w = 0.8 * self.collision_rect.w
-        self.collision_rect.h = 10
+        self.collision_rect.x += 0.25 * self.collision_rect.w
+        self.collision_rect.y -= 20
+        self.collision_rect.w = 0.5 * self.collision_rect.w
+        self.collision_rect.h = 1
 
         self.x = 0
         self.y = 0
@@ -70,7 +71,7 @@ class RecyclingBin(pygame.sprite.Sprite):
         self.y = y
         self.rect.x = self.x - self.rect.w / 2
         self.rect.y = self.y - self.rect.h / 2
-        self.collision_rect.x = self.rect.x
+        self.collision_rect.x = self.rect.x + 0.25 * self.collision_rect.w
         self.collision_rect.y = self.rect.y
 
 
@@ -85,6 +86,11 @@ class RecyclingBin(pygame.sprite.Sprite):
             vx = -speed
 
         self.set_pos(self.x + vx, self.y)
+
+        if self.x < -30:
+            self.set_pos(WIDTH + 30, self.y)
+        elif self.x > WIDTH + 30:
+            self.set_pos(-30, self.y)
 
 
 
@@ -101,7 +107,14 @@ class Trash(pygame.sprite.Sprite):
             "envelope_2", "foil", "milk_carton", "orange_juice", "plastic_bottle", 
             "rotten_apple", "soda_can", "spilled_water", "trash_bag", "tuna_can"
         ]
+
+        self.good_trash = ["cardboard_box", "envelope_2", "foil", "milk_carton", "orange_juice", "plastic_bottle", "soda_can", "spilled_water", "tuna_can"]
  
+        if trash_type in self.good_trash:
+            self.recyclable = True
+        else:
+            self.recyclable = False
+
         self.images = {}
         self.images["banana_peel"] = pygame.image.load("assets/banana_peel.png")
         self.images["boot"] = pygame.image.load("assets/boot.png")
@@ -146,9 +159,6 @@ class Game():
     """controls the actual game"""
     def __init__(self):
         pygame.init()
-        
-
-        
 
         self.trash_types = [
             "banana_peel", "boot", "broken_egg", "broken_bottle", "carboard_box", 
@@ -177,11 +187,21 @@ class Game():
             "right": False,
         }
 
+
+        self.start_backdrop = Backdrop(BACKDROP)
         self.sky_backdrop = Backdrop(SKY_BACKGROUND)
-       
+        self.how_to_backdrop = Backdrop(HOW_TO_PLAY_BACKGROUND)
 
         self.play_backgrounds = pygame.sprite.Group()
         self.play_backgrounds.add(self.sky_backdrop)
+
+        self.start_backgrounds = pygame.sprite.Group() 
+        self.start_backgrounds.add(self.start_backdrop)
+
+        self.play_backgrounds.add(self.sky_backdrop)
+
+        self.how_to_play_backgrounds = pygame.sprite.Group()
+        self.how_to_play_backgrounds.add(self.how_to_backdrop)
 
         self.recycling_bin = RecyclingBin(self.input)
         self.recycling_bin.set_pos(WIDTH / 2, HEIGHT - 96)
@@ -199,7 +219,6 @@ class Game():
         
         self.start_buttons = pygame.sprite.Group()
         self.start_buttons.add(self.start_button)
-
         self.start_buttons.add(self.how_to_play_button)
 
         self.game_section = START
@@ -213,10 +232,14 @@ class Game():
             self.update_trash()
             self.draw_play_screen()
         elif self.game_section == START:
+            self.start_backgrounds.update()
+            self.start_backgrounds.draw(self.screen)
+
             self.start_buttons.update()
             self.start_buttons.draw(self.screen)
         elif self.game_section == HOW_TO:
-            pass
+            self.how_to_play_backgrounds.update()
+            self.how_to_play_backgrounds.draw(self.screen)
 
         pygame.display.flip()
 
@@ -230,19 +253,19 @@ class Game():
 
         self.players.update()
         self.players.draw(self.screen)
-        size = width, height = 800,500
-        
-        myfont = pygame.font.SysFont("monospace", 16)
-        scoretext = myfont.render("Score = "+ str(score), 1, (0,0,0))
+
+        myfont = pygame.font.SysFont("Krungthep", 32)
+        scoretext = myfont.render("Score = "+ str(self.score), 1, (0,0,0))
         self.screen.blit(scoretext, (5, 10))
     
+
     def texts(self, score, screen):
-            font=pygame.font.Font(None,30)
-            scoretext=font.render("Score:"+str(score), 1,(255,255,255))
-            screen.blit(scoretext, (500, 457))
+        font=pygame.font.Font(None,30)
+        scoretext=font.render("Score:"+str(score), 1,(255,255,255))
+        screen.blit(scoretext, (500, 457))
+
 
     def update_trash(self):
-        
         if self.time_limit > 20:
             if self.difficulty_timer >= self.difficulty_time_limit:
                 self.difficulty_timer = 0
@@ -253,7 +276,7 @@ class Game():
         if self.timer >= self.time_limit:
             self.timer = 0
             trash_piece = Trash(random.choice(self.trash_types))
-            trash_piece.set_pos(random.randint(0, WIDTH), -10)
+            trash_piece.set_pos(random.randint(20, WIDTH-  20), -10)
 
             self.trash_items.add(trash_piece)
         else:
@@ -261,9 +284,12 @@ class Game():
 
         for trash_item in self.trash_items:
             if trash_item.rect.colliderect(self.recycling_bin.collision_rect):
-                self.score += 10
                 trash_item.kill()
-               
+                if trash_item.recyclable:
+                    self.score += 10
+                else:
+                    self.score -= 20   
+
                 print(self.score)
         
     def handle_input(self):
@@ -283,16 +309,17 @@ class Game():
                     self.input["left"] = False
                 elif event.key == pygame.K_d:
                     self.input["right"] = False
-
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 pos = pygame.mouse.get_pos()
 
                 for button in self.start_buttons:
                     if button.rect.collidepoint(pos):
+                        print(button.button_type)
+                        print(HOW_TO_PLAY_BUTTON)
                         if button.button_type == START_BUTTON:
                             self.game_section = PLAY
                         elif button.button_type == HOW_TO_PLAY_BUTTON:
-                            self.game_section == HOW_TO
+                            self.game_section = HOW_TO
 
 
 def main():
