@@ -15,7 +15,7 @@ class Backdrop(pygame.sprite.Sprite):
         self.images[SKY_BACKGROUND] = pygame.image.load("assets/sky.jpg")
         self.images[BACKDROP] = pygame.image.load("assets/backdrop.png")
         self.images[HOW_TO_PLAY_BACKGROUND] = pygame.image.load("assets/how_to_play_background.png")
-
+        self.images[GAME_OVER_BACKDROP] = pygame.image.load("assets/game_over_backdrop.png")
         self.image = self.images[backdrop_type]
 
         self.rect = self.image.get_rect()
@@ -31,7 +31,10 @@ class Button(pygame.sprite.Sprite):
         self.images = {}
         self.images[START_BUTTON] = pygame.image.load("assets/start_button.png")
         self.images[HOW_TO_PLAY_BUTTON] = pygame.image.load("assets/how_to_play_button.png")  
-        
+        self.images[BACK_BUTTON] = pygame.image.load("assets/back_button.png")
+
+        self.images[PLAY_AGAIN_BUTTON] = pygame.image.load("assets/play_again_button.png")
+       
         self.image = self.images[button_type]
 
         self.rect = self.image.get_rect()
@@ -150,9 +153,6 @@ class Trash(pygame.sprite.Sprite):
     def update(self):
         self.set_pos(self.x, self.y + self.trash_speed)
 
-        if self.y > HEIGHT:
-            self.kill()
-
 
 
 class Game():
@@ -191,6 +191,8 @@ class Game():
         self.start_backdrop = Backdrop(BACKDROP)
         self.sky_backdrop = Backdrop(SKY_BACKGROUND)
         self.how_to_backdrop = Backdrop(HOW_TO_PLAY_BACKGROUND)
+        
+        self.game_over_backdrop = Backdrop(GAME_OVER_BACKDROP)
 
         self.play_backgrounds = pygame.sprite.Group()
         self.play_backgrounds.add(self.sky_backdrop)
@@ -203,6 +205,9 @@ class Game():
         self.how_to_play_backgrounds = pygame.sprite.Group()
         self.how_to_play_backgrounds.add(self.how_to_backdrop)
 
+        self.game_over_backdrops = pygame.sprite.Group()
+        self.game_over_backdrops.add(self.game_over_backdrop)
+
         self.recycling_bin = RecyclingBin(self.input)
         self.recycling_bin.set_pos(WIDTH / 2, HEIGHT - 96)
 
@@ -212,14 +217,32 @@ class Game():
         self.trash_items = pygame.sprite.Group()
 
         self.start_button = Button(START_BUTTON)
-        self.start_button.set_pos(WIDTH/2, HEIGHT/2)
+        self.start_button.set_pos(WIDTH/2, HEIGHT/2 + 50)
 
         self.how_to_play_button = Button(HOW_TO_PLAY_BUTTON)
-        self.how_to_play_button.set_pos(WIDTH/2, HEIGHT/2 + 120)
+        self.how_to_play_button.set_pos(WIDTH/2, HEIGHT/2 + 170)
         
+
+        self.back_button = Button(BACK_BUTTON)
+        self.back_button.set_pos(80, 50)
+
+
+        self.play_again_button =Button(PLAY_AGAIN_BUTTON)
+        self.play_again_button.set_pos(WIDTH/2, HEIGHT/2)
+
+
         self.start_buttons = pygame.sprite.Group()
         self.start_buttons.add(self.start_button)
         self.start_buttons.add(self.how_to_play_button)
+        
+
+        self.how_to_buttons = pygame.sprite.Group()
+        self.how_to_buttons.add(self.back_button)
+
+        self.play_again_buttons = pygame.sprite.Group()
+        self.play_again_buttons.add(self.play_again_button)
+        
+
 
         self.game_section = START
 
@@ -228,18 +251,41 @@ class Game():
         self.clock.tick(FPS)
         self.handle_input()
 
+        for trash in self.trash_items:
+            if trash.y > HEIGHT:
+                if trash.recyclable:
+                    self.score -= 3
+                trash.kill()
+
+        if self.score < 0:
+            self.game_section = GAME_OVER
+
+        print(self.game_section)
+
         if self.game_section == PLAY:
             self.update_trash()
             self.draw_play_screen()
+
         elif self.game_section == START:
             self.start_backgrounds.update()
             self.start_backgrounds.draw(self.screen)
 
             self.start_buttons.update()
             self.start_buttons.draw(self.screen)
+
         elif self.game_section == HOW_TO:
             self.how_to_play_backgrounds.update()
             self.how_to_play_backgrounds.draw(self.screen)
+
+            self.how_to_buttons.update()
+            self.how_to_buttons.draw(self.screen)
+        
+        elif self.game_section == GAME_OVER:
+            self.game_over_backdrops.update()
+            self.game_over_backdrops.draw(self.screen)
+
+            self.play_again_buttons.update()
+            self.play_again_buttons.draw(self.screen)
 
         pygame.display.flip()
 
@@ -312,14 +358,27 @@ class Game():
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 pos = pygame.mouse.get_pos()
 
-                for button in self.start_buttons:
-                    if button.rect.collidepoint(pos):
-                        print(button.button_type)
-                        print(HOW_TO_PLAY_BUTTON)
-                        if button.button_type == START_BUTTON:
-                            self.game_section = PLAY
-                        elif button.button_type == HOW_TO_PLAY_BUTTON:
-                            self.game_section = HOW_TO
+                if self.game_section == START:
+                    for button in self.start_buttons:
+                        if button.rect.collidepoint(pos):
+                            print(button.button_type)
+                            print(HOW_TO_PLAY_BUTTON)
+
+                            if button.button_type == START_BUTTON:
+                                self.game_section = PLAY
+                            elif button.button_type == HOW_TO_PLAY_BUTTON:
+                                self.game_section = HOW_TO
+                elif self.game_section == HOW_TO:
+                    for button in self.how_to_buttons:
+                        if button.rect.collidepoint(pos):
+                            if button.button_type == BACK_BUTTON:
+                                self.game_section = START
+                elif self.game_section == GAME_OVER:
+                    for button in self.play_again_buttons:
+                        if button.rect.collidepoint(pos):
+                            if button.button_type == PLAY_AGAIN_BUTTON:
+                                self.score = 0
+                                self.game_section = START
 
 
 def main():
