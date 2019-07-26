@@ -2,6 +2,8 @@ import pygame
 import random
 from constants import *
 
+#fix the speed of trash when playing again
+
 # 2 modes
 # if good trash falls then deduct 5 points
 # start backdrop
@@ -16,7 +18,11 @@ class Backdrop(pygame.sprite.Sprite):
         self.images[BACKDROP] = pygame.image.load("assets/backdrop.png")
         self.images[HOW_TO_PLAY_BACKGROUND] = pygame.image.load("assets/how_to_play_background.png")
         self.images[GAME_OVER_BACKDROP] = pygame.image.load("assets/game_over_backdrop.png")
+        self.images[PAUSE_BACKDROP] = pygame.image.load("assets/pause_backdrop.png") 
+        #self.images[CHOOSE_YOUR_CHARACTER_BACKDROP] = pygame.image.load("assets/choose_your_character_backdrop.png")
+
         self.image = self.images[backdrop_type]
+
 
         self.rect = self.image.get_rect()
 
@@ -32,8 +38,10 @@ class Button(pygame.sprite.Sprite):
         self.images[START_BUTTON] = pygame.image.load("assets/start_button.png")
         self.images[HOW_TO_PLAY_BUTTON] = pygame.image.load("assets/how_to_play_button.png")  
         self.images[BACK_BUTTON] = pygame.image.load("assets/back_button.png")
-
         self.images[PLAY_AGAIN_BUTTON] = pygame.image.load("assets/play_again_button.png")
+        self.images[PAUSE_BUTTON] = pygame.image.load("assets/pause_button.png")
+        self.images[RETURN_TO_GAME_BUTTON] = pygame.image.load("assets/return_to_game_button.png")
+        self.images[EXIT_BUTTON] = pygame.image.load("assets/exit_button.png")
        
         self.image = self.images[button_type]
 
@@ -108,10 +116,9 @@ class Trash(pygame.sprite.Sprite):
         self.trash_types = [
             "banana_peel", "boot", "broken_egg", "broken_bottle", "carboard_box", 
             "envelope_2", "foil", "milk_carton", "orange_juice", "plastic_bottle", 
-            "rotten_apple", "soda_can", "spilled_water", "trash_bag", "tuna_can"
+            "rotten_apple", "soda_can", "spilled_water", "trash_bag", "tuna_can", "watermelon_slice", "fish_skeleton"
         ]
-
-        self.good_trash = ["cardboard_box", "envelope_2", "foil", "milk_carton", "orange_juice", "plastic_bottle", "soda_can", "spilled_water", "tuna_can"]
+        self.good_trash = ["carboard_box", "envelope_2", "foil", "milk_carton", "orange_juice", "plastic_bottle", "soda_can", "spilled_water", "tuna_can"]
  
         if trash_type in self.good_trash:
             self.recyclable = True
@@ -134,6 +141,8 @@ class Trash(pygame.sprite.Sprite):
         self.images["spilled_water"] = pygame.image.load("assets/spilled_water.png")
         self.images["trash_bag"] = pygame.image.load("assets/trash_bag.png")
         self.images["tuna_can"] = pygame.image.load("assets/tuna_can.png")
+        self.images["watermelon_slice"] = pygame.image.load("assets/watermelon_slice.png")
+        self.images["fish_skeleton"] = pygame.image.load("assets/fish_skeleton.png")
         
         self.image = self.images[self.trash_type]
 
@@ -163,7 +172,7 @@ class Game():
         self.trash_types = [
             "banana_peel", "boot", "broken_egg", "broken_bottle", "carboard_box", 
             "envelope_2", "foil", "milk_carton", "orange_juice", "plastic_bottle", 
-            "rotten_apple", "soda_can", "spilled_water", "trash_bag", "tuna_can"
+            "rotten_apple", "soda_can", "spilled_water", "trash_bag", "tuna_can", "watermelon_slice", "fish_skeleton" 
         ]
 
         self.clock = pygame.time.Clock()
@@ -191,8 +200,9 @@ class Game():
         self.start_backdrop = Backdrop(BACKDROP)
         self.sky_backdrop = Backdrop(SKY_BACKGROUND)
         self.how_to_backdrop = Backdrop(HOW_TO_PLAY_BACKGROUND)
-        
         self.game_over_backdrop = Backdrop(GAME_OVER_BACKDROP)
+
+        self.pause_backdrop = Backdrop(PAUSE_BACKDROP)
 
         self.play_backgrounds = pygame.sprite.Group()
         self.play_backgrounds.add(self.sky_backdrop)
@@ -207,6 +217,12 @@ class Game():
 
         self.game_over_backdrops = pygame.sprite.Group()
         self.game_over_backdrops.add(self.game_over_backdrop)
+
+        self.pause_backdrops = pygame.sprite.Group()
+        self.pause_backdrops.add(self.pause_backdrop)
+
+        self.choose_your_character_backdrops = pygame.sprite.Group()
+        self.choose_your_character_backdrops.add(self.choose_your_character_backdrop)
 
         self.recycling_bin = RecyclingBin(self.input)
         self.recycling_bin.set_pos(WIDTH / 2, HEIGHT - 96)
@@ -227,8 +243,17 @@ class Game():
         self.back_button.set_pos(80, 50)
 
 
-        self.play_again_button =Button(PLAY_AGAIN_BUTTON)
+        self.play_again_button = Button(PLAY_AGAIN_BUTTON)
         self.play_again_button.set_pos(WIDTH/2, HEIGHT/2)
+
+        self.pause_button = Button(PAUSE_BUTTON)
+        self.pause_button.set_pos(750, 32)
+
+        self.return_to_game_button = Button(RETURN_TO_GAME_BUTTON)
+        self.return_to_game_button.set_pos(WIDTH/2,HEIGHT/2 - 20)
+
+        self.exit_button = Button(EXIT_BUTTON)
+        self.exit_button.set_pos(WIDTH/2, HEIGHT/2 + 120)
 
 
         self.start_buttons = pygame.sprite.Group()
@@ -241,8 +266,14 @@ class Game():
 
         self.play_again_buttons = pygame.sprite.Group()
         self.play_again_buttons.add(self.play_again_button)
-        
 
+        self.pause_buttons = pygame.sprite.Group()
+        self.pause_buttons.add(self.pause_button) 
+
+        self.pause_screen_buttons = pygame.sprite.Group()
+        self.pause_screen_buttons.add(self.return_to_game_button)
+        self.pause_screen_buttons.add(self.exit_button)
+ 
 
         self.game_section = START
 
@@ -266,6 +297,9 @@ class Game():
             self.update_trash()
             self.draw_play_screen()
 
+            self.pause_buttons.update()
+            self.pause_buttons.draw(self.screen)
+
         elif self.game_section == START:
             self.start_backgrounds.update()
             self.start_backgrounds.draw(self.screen)
@@ -286,6 +320,14 @@ class Game():
 
             self.play_again_buttons.update()
             self.play_again_buttons.draw(self.screen)
+       
+        elif self.game_section == PAUSE:
+            self.pause_backdrops.update()
+            self.pause_backdrops.draw(self.screen)
+
+            self.pause_screen_buttons.update()
+            self.pause_screen_buttons.draw(self.screen)
+
 
         pygame.display.flip()
 
@@ -361,9 +403,6 @@ class Game():
                 if self.game_section == START:
                     for button in self.start_buttons:
                         if button.rect.collidepoint(pos):
-                            print(button.button_type)
-                            print(HOW_TO_PLAY_BUTTON)
-
                             if button.button_type == START_BUTTON:
                                 self.game_section = PLAY
                             elif button.button_type == HOW_TO_PLAY_BUTTON:
@@ -378,7 +417,25 @@ class Game():
                         if button.rect.collidepoint(pos):
                             if button.button_type == PLAY_AGAIN_BUTTON:
                                 self.score = 0
+                                self.trash_items.empty()
+                                self.game_section = PLAY
+
+                elif self.game_section == PLAY:
+                    for button in self.pause_buttons:
+                        if button.rect.collidepoint(pos):
+                            if button.button_type == PAUSE_BUTTON:
+                                self.game_section = PAUSE
+                
+                elif self.game_section == PAUSE:
+                    for button in self.pause_screen_buttons:
+                        if button.rect.collidepoint(pos):
+                            if button.button_type == EXIT_BUTTON:
                                 self.game_section = START
+                        if button.button_type == RETURN_TO_GAME_BUTTON:
+                                
+                                self.game_section = PLAY
+                
+                
 
 
 def main():
